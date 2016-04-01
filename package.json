@@ -1,6 +1,6 @@
 {
   "name": "ts-git",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Compact high-level JavaScript API for git",
   "main": "dist/ts-git.js",
   "typings": "dist/ts-git.d.ts",
