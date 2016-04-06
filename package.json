@@ -1,6 +1,6 @@
 {
   "name": "ts-git",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Compact high-level JavaScript API for git",
   "main": "dist/ts-git.js",
   "typings": "dist/ts-git.d.ts",
@@ -22,13 +22,13 @@
   },
   "homepage": "https://github.com/charto/ts-git#readme",
   "dependencies": {
-    "bluebird": "^3.3.4",
+    "bluebird": "^3.4.0",
     "git-node-fs": "~1.0.0",
     "js-git": "~0.7.7"
   },
   "devDependencies": {
-    "docts": "~0.0.4",
-    "typescript": "^1.8.9",
-    "typings": "~0.7.12"
+    "docts": "~0.1.0",
+    "typescript": "^1.8.10",
+    "typings": "~0.8.1"
   }
 }
