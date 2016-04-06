@@ -36,6 +36,11 @@ export interface CommitInfo {
 	hash: string;
 }
 
+export interface HeadInfo {
+	branch?: string;
+	hash?: string;
+}
+
 /** Get promise resolving to desired type of hash (eg. sha1) for contents of stream.
   * Optionally prefix contents with an arbitrary header before hashing. */
 
@@ -69,14 +74,28 @@ export class Git {
 
 		return(
 			Promise.promisify(fs.readFile)(headPath).then((data: Buffer) => {
+				var info: HeadInfo = {};
 				var head = data.toString('utf8').trim();
 				var match = data.toString('utf8').match(/^[0-9A-Fa-f]+$/);
-				if(match) return(match[0]);
+
+				if(match) {
+					info.hash = match[0];
+					return(info);
+				}
 
 				match = head.match(/^ref:\s*([/A-Za-z]*)$/);
 				if(match) {
+					var refName = match[1];
 					var readRef = this.repo.readRefAsync as (ref: string) => Promise<string>;
-					return(readRef(match[1]));
+
+					match = refName.match(/^refs\/heads\/([A-Za-z]+([-.\/][A-Za-z]+)*)$/);
+
+					if(match) info.branch = match[1];
+
+					return(readRef(refName).then((hash: string) => {
+						info.hash = hash;
+						return(info);
+					}));
 				}
 
 				throw(new Error('Error parsing HEAD ' + head));
@@ -140,9 +159,9 @@ export class Git {
 			Promise.promisify(fs.stat)(pathName).then((stats: fs.Stats) =>
 				// Store file stats, get hash of HEAD commit.
 				(statInfo = stats, this.getWorkingHead())
-			).then((commitHash: string) =>
+			).then((head: HeadInfo) =>
 				// Get info for HEAD commit.
-				this.getCommit(commitHash)
+				this.getCommit(head.hash)
 			).then((info: CommitInfo) =>
 				// Get info for given file in git inside HEAD commit.
 				this.findPath(info.tree, pathName)
@@ -167,7 +186,7 @@ export class Git {
 	/** Walk the commit log from given hash towards the initial commit,
 	  * calling handler for each commit matching options. */
 
-	walkLog(commitHash: string, options: GetLogOptions, handler: (entry: CommitInfo) => void) {
+	walkLog(commitHash: string, options: GetLogOptions, handler: (entry: CommitInfo) => void): Promise<void> {
 		options = options || {} as GetLogOptions;
 
 		var count = options.count || Infinity;
