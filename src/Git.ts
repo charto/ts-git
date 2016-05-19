@@ -199,18 +199,27 @@ export class Git {
 		) => {
 			walker.read((err: any, entry: CommitInfo) => {
 				if(!entry) {
+					// Went past the first commit, so report it.
+
 					if(entryPrev) handler(entryPrev);
 					resolve();
 				} else if(options.path) {
 					this.findPath(entry.tree, options.path).then((info: FileInfo) => {
-						var fileHash = info.hash;
-						if(fileHash != hashPrev && entryPrev) handler(entryPrev), --count;
+						if(!info) {
+							// File was not found in this commit, so stop looking.
 
-						entryPrev = entry;
-						hashPrev = fileHash;
+							if(entryPrev) handler(entryPrev);
+							resolve();
+						} else {
+							var fileHash = info.hash;
+							if(fileHash != hashPrev && entryPrev) handler(entryPrev), --count;
 
-						if(fileHash && count) helper(walker, resolve);
-						else resolve();
+							entryPrev = entry;
+							hashPrev = fileHash;
+
+							if(fileHash && count) helper(walker, resolve);
+							else resolve();
+						}
 					})
 				} else {
 					handler(entry), --count;
@@ -222,9 +231,7 @@ export class Git {
 
 		return(
 			this.repo.logWalkAsync(commitHash).then((walker: any) =>
-				new Promise((resolve: () => void, reject: (err: any) => void) =>
-					helper(walker, resolve)
-				)
+				Promise.promisify(helper)(walker)
 			)
 		);
 	}
